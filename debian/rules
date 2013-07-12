@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+clean:
+	dh $@
+	rm -fr build
+
+override_dh_usrlocal:
+	echo Skipping usr/local

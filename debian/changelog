@@ -1,0 +1,11 @@
+eos-plymouth-theme (1.0-1) unstable; urgency=low
+
+  * Repackaging.
+
+ -- Srdjan Grubor <sgnn7@sgnn7.org>  Fri, 12 July 2013 13:30:02 -0500
+
+plymouth-theme-azenis (0.5.0-1) natty; urgency=high
+
+  * Initial release.
+
+ -- Alessandro Lanave <allanav@tin.it>  Tue, 17 May 2011 16:44:02 +0200
