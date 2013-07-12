@@ -1,0 +1,302 @@
+animation.imagecount = 32;
+animation.target_width = 0.333 * Window.GetHeight();
+animation.target_height = 0.333 * Window.GetHeight();
+
+fun RotatedHighlight(progress) {
+    img = highlight.sprite.Rotate(Math.Pi*2*progress);
+    return img;
+}
+
+fun LoadAndCenter(image_object) {
+    image_object.sprite = SpriteNew();
+    image_object.sprite.SetImage(image_object.image);
+    image_object.sprite.SetX(Window.GetX() + Window.GetWidth() / 2 - image_object.image.GetWidth() / 2);
+    image_object.sprite.SetY(Window.GetY() + Window.GetHeight() / 2 - image_object.image.GetHeight() / 2);
+    image_object.sprite.SetOpacity(0);
+}
+
+Window.SetBackgroundTopColor(1, 1, 1);
+Window.SetBackgroundBottomColor(1, 1, 1);
+
+background.original_image = ImageNew("background.png");
+logo.original_image = ImageNew("logo.png");
+loaded_logo.original_image = ImageNew("logo_loaded.png");
+
+# Some predefined and reused values
+logo_scale_amount = 0.25;
+logo_ratio = logo.original_image.GetHeight() / logo.original_image.GetWidth();
+logo_scale.y = logo_scale_amount * Window.GetHeight();
+logo_scale.x = logo_scale_amount / logo_ratio *  Window.GetHeight();
+
+logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
+loaded_logo.image = loaded_logo.original_image.Scale(logo_scale.x, logo_scale.y);
+
+LoadAndCenter(logo);
+LoadAndCenter(loaded_logo);
+
+# If we are loading normal boot/shutdown
+if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
+    glowing_logo.original_image = ImageNew("logo_glowing.png");
+    glowing_logo.image = glowing_logo.original_image.Scale(logo_scale.x, logo_scale.y);
+    LoadAndCenter(glowing_logo);
+
+    for (index = 0; index < animation.imagecount; index++) {
+        ChannelImageCache[index];
+        ChannelImageCache[index].original_image = ImageNew("circle_channel_" + index + ".png");
+        ChannelImageCache[index].image = ChannelImageCache[index].original_image.Scale(animation.target_width, animation.target_height);
+    }
+
+    full_channel.original_image = ImageNew("circle_channel_full.png");
+    full_channel.image = full_channel.original_image.Scale(animation.target_width, animation.target_height);
+
+    full_glowing_channel.original_image = ImageNew("circle_channel_full-glow.png");
+    full_glowing_channel.image = full_glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
+    LoadAndCenter(full_glowing_channel);
+
+    channel_holder.sprite = SpriteNew();
+    channel_holder.sprite.SetImage(ChannelImageCache[0].image);
+    channel_holder.sprite.SetX((Window.GetX() + Window.GetWidth() - animation.target_width) / 2);
+    channel_holder.sprite.SetY((Window.GetY() + Window.GetHeight()  - animation.target_height)  / 2);
+    channel_holder.sprite.SetOpacity(1);
+
+    highlight.original_image= ImageNew("circle_highlight.png");
+    highlight.image = highlight.original_image.Scale(animation.target_width, animation.target_height);
+    highlight_holder.sprite = SpriteNew();
+    highlight_holder.sprite.SetImage(highlight.image);
+    highlight_holder.sprite.SetX((Window.GetX() + Window.GetWidth() - animation.target_width) / 2);
+    highlight_holder.sprite.SetY((Window.GetY() + Window.GetHeight()  - animation.target_height)  / 2);
+    highlight_holder.sprite.SetOpacity(1);
+
+    logo.sprite.SetOpacity(1);
+} else {
+    loaded_logo.sprite.SetOpacity(1);
+}
+
+background.image = background.original_image.Scale(Window.GetWidth() , Window.GetHeight());
+background.sprite = SpriteNew();
+background.sprite.SetImage(background.image);
+background.sprite.SetPosition(Window.GetX(), Window.GetY(), -10);
+
+sprite_prompt = SpriteNew();
+rot = 0;
+fun refresh_callback() {
+    if (status != "normal") {
+        # Turn off everything if there is a password prompt
+        loaded_logo.sprite.SetOpacity(0);
+        glowing_logo.sprite.SetOpacity(0);
+        logo.sprite.SetOpacity(0);
+        channel_holder.sprite.SetOpacity(0);
+        highlight_holder.sprite.SetOpacity(0);
+        full_glowing_channel.sprite.SetOpacity(0);
+    }
+}
+
+if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
+    Plymouth.SetRefreshFunction (refresh_callback);
+}
+
+#----------------------------------------- Dialog --------------------------------
+
+status = "normal";
+
+fun dialog_setup() {
+    local.box;
+    local.lock;
+    local.entry;
+    local.prompt_sprite;
+
+    box.image = ImageNew("box.png");
+    lock.image = ImageNew("lock.png");
+    entry.image = ImageNew("entry.png");
+
+    box.sprite = SpriteNew();
+    box.sprite.SetImage(box.image);
+    box.x = Window.GetX() + Window.GetWidth()  / 2 - box.image.GetWidth() / 2;
+    box.y = Window.GetY() + Window.GetHeight() / 2 - box.image.GetHeight() / 2;
+    box.z = 10000;
+    box.sprite.SetPosition(box.x, box.y, box.z);
+
+    lock.sprite = SpriteNew();
+    lock.sprite.SetImage(lock.image);
+    lock.x = box.x + box.image.GetWidth() / 2 - (lock.image.GetWidth() + entry.image.GetWidth()) / 2;
+    lock.y = box.y + box.image.GetHeight() / 2 - lock.image.GetHeight() / 2;
+    lock.z = box.z + 1;
+    lock.sprite.SetPosition(lock.x, lock.y, lock.z);
+
+    entry.sprite = SpriteNew();
+    entry.sprite.SetImage(entry.image);
+    entry.x = lock.x + lock.image.GetWidth();
+    entry.y = box.y + box.image.GetHeight() / 2 - entry.image.GetHeight() / 2;
+    entry.z = box.z + 1;
+    entry.sprite.SetPosition(entry.x, entry.y, entry.z);
+
+    prompt_sprite = SpriteNew();
+    prompt_sprite.SetPosition(box.x, box.y - 20, box.z);
+
+    global.dialog.box = box;
+    global.dialog.lock = lock;
+    global.dialog.entry = entry;
+    global.dialog.bullet_image = ImageNew("bullet.png");
+    global.dialog.prompt_sprite = prompt_sprite;
+    dialog_opacity(1);
+}
+
+fun dialog_opacity(opacity) {
+    dialog.box.sprite.SetOpacity(opacity);
+    dialog.lock.sprite.SetOpacity(opacity);
+    dialog.entry.sprite.SetOpacity(opacity);
+    dialog.prompt_sprite.SetOpacity(opacity);
+    for (index = 0; dialog.bullet[index]; index++) {
+        dialog.bullet[index].sprite.SetOpacity(opacity);
+    }
+}
+
+fun display_normal_callback () {
+    global.status = "normal";
+    if (global.dialog) {
+        dialog_opacity(0);
+    }
+}
+
+fun display_password_callback (prompt, bullets) {
+    global.status = "password";
+    if (!global.dialog) {
+        dialog_setup();
+    } else {
+        dialog_opacity(1);
+    }
+
+    if (prompt) {
+        dialog.prompt_sprite.SetImage(Image.Text(prompt, 1.0, 1.0, 1.0));
+    }
+
+    for (index = 0; dialog.bullet[index] || index < bullets; index++) { 
+        if (!dialog.bullet[index]) {
+            dialog.bullet[index].sprite = SpriteNew();
+            dialog.bullet[index].sprite.SetImage(dialog.bullet_image);
+            dialog.bullet[index].x = dialog.entry.x + index * dialog.bullet_image.GetWidth() + dialog.bullet_image.GetWidth();
+            dialog.bullet[index].y = dialog.entry.y + dialog.entry.image.GetHeight() / 2 - dialog.bullet_image.GetHeight() / 2;
+            dialog.bullet[index].z = dialog.entry.z + 1;
+            dialog.bullet[index].sprite.SetPosition(dialog.bullet[index].x, dialog.bullet[index].y, dialog.bullet[index].z);
+        }
+
+        if (index < bullets) {
+            dialog.bullet[index].sprite.SetOpacity(1);
+        } else {
+            dialog.bullet[index].sprite.SetOpacity(0);
+        }
+    }
+}
+
+fun display_message_callback (prompt) {
+    prompt = Image.Text(prompt,1.0, 1.0, 1.0);
+    sprite_prompt.SetImage(prompt);
+    sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
+}
+
+/* instantiate dialog at startup, to ensure all icons are loaded in memory before initrd is unmounted, in case /usr isn't mounted yet */
+dialog_setup(); dialog_opacity(0);
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+Plymouth.SetMessageFunction(display_message_callback);
+# This shows what is starting which is too noisy now. Maybe we can add ability
+# to show fsck status in the future
+# Plymouth.SetUpdateStatusFunction(display_message_callback);
+
+#----------------------------------------- Animation --------------------------------
+fun ShowLoadedLogo() {
+    loaded_logo.sprite.SetOpacity(1);
+
+    glowing_logo.sprite.SetOpacity(0);
+    logo.sprite.SetOpacity(0);
+    channel_holder.sprite.SetOpacity(0);
+    highlight_holder.sprite.SetOpacity (0);
+}
+
+# These variables determine the length of the whole cycle
+# For debugging reduce loaded_end to a value lower than 1.0
+loading_start = 0.0;
+loaded_end = 1.0;
+animation.length = loaded_end - loading_start;
+
+# At 55%, loading circle is full
+loading_end = 0.55;
+
+# At 40%, we start showing the glow logo and once loading circle is full
+# it should be full opacity
+glow_ramp_start = 0.40;
+glow_ramp_full =  loading_end;
+
+glow_ramp_length = glow_ramp_full - glow_ramp_start;
+
+# At 55% we slowly hide the glow
+glow_ramp_down = 0.55;
+glow_ramp_end = glow_ramp_down + glow_ramp_length;
+
+# We show the loaded logo from glow_ramp_down onward
+loaded_logo_visible = glow_ramp_down;
+
+anim_step=(1.0 / loading_end) * animation.imagecount;
+fun progress_callback (duration, raw_progress) {
+    adj_progress = raw_progress * (1 / animation.length);
+
+# Used for debugging
+#   text_progress = Math.Int(adj_progress * 100);
+#   prompt = Image.Text(text_progress + "% - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
+#   sprite_prompt.SetImage(prompt);
+#   sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
+
+    if (Plymouth.GetMode() == "shutdown") {
+        ShowLoadedLogo();
+        return;
+    }
+
+    # Show circle progress
+    if (adj_progress <= loading_end) {
+        highlight_holder.sprite.SetOpacity(1);
+        channel_holder.sprite.SetOpacity(1);
+        logo.sprite.SetOpacity(1);
+
+        highlight_location = 2 * Math.Pi * adj_progress / loading_end;
+        highlight.image = highlight.original_image.Scale(animation.target_width, animation.target_height).Rotate(highlight_location);
+        highlight_holder.sprite.SetImage(highlight.image);
+
+        anim_index=Math.Int(anim_step * adj_progress);
+        channel_holder.sprite.SetImage(ChannelImageCache[anim_index].image);
+    } else {
+        logo.sprite.SetOpacity(1);
+        highlight_holder.sprite.SetOpacity(0);
+        channel_holder.sprite.SetOpacity(0);
+    }
+
+    # Show glow
+    if (adj_progress >= glow_ramp_start) {
+        # Ramp up and hold
+        if (adj_progress < glow_ramp_down) {
+            glow_opacity = (adj_progress - glow_ramp_start) * (1.0 / glow_ramp_length);
+            glow_opacity = Math.Min(1.0, glow_opacity);
+            glowing_logo.sprite.SetOpacity(glow_opacity);
+            full_glowing_channel.sprite.SetOpacity(glow_opacity);
+        # Ramp down
+        } else if (adj_progress < glow_ramp_end) {
+            glow_opacity = (adj_progress - glow_ramp_down) * (1.0 / glow_ramp_length);
+            glow_opacity = 1 - glow_opacity;
+            glowing_logo.sprite.SetOpacity(glow_opacity);
+            full_glowing_channel.sprite.SetOpacity(glow_opacity);
+        }
+    }
+
+    # Show loaded logo
+    if (adj_progress >= loaded_logo_visible) {
+        loaded_logo.sprite.SetOpacity(1);
+    }
+}
+Plymouth.SetBootProgressFunction(progress_callback);
+
+#----------------------------------------- Quit --------------------------------
+
+fun quit_callback() {
+    ShowLoadedLogo();
+}
+Plymouth.SetQuitFunction(quit_callback);
