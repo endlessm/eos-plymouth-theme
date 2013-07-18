@@ -1,1 +1,3 @@
 eos-plymouth-theme/
+*.log
+*.debhelper
