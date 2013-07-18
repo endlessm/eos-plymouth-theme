@@ -2,23 +2,28 @@
 
 case "$1" in
     configure)
-	update-alternatives \
-		--install /lib/plymouth/themes/default.plymouth default.plymouth \
-		/lib/plymouth/themes/endlessos/endlessos.plymouth 10
+        update-alternatives \
+            --install /lib/plymouth/themes/default.plymouth default.plymouth \
+            /lib/plymouth/themes/endlessos/endlessos.plymouth 999
 
-	if which update-initramfs >/dev/null 2>&1
-	then
-	    update-initramfs -u
-	fi
-	;;
+        if which update-initramfs >/dev/null 2>&1
+        then
+            update-initramfs -u
+        fi
+
+        if which update-grub >/dev/null 2>&1
+        then
+            update-grub
+        fi
+        ;;
 
     abort-upgrade|abort-deconfigure|abort-remove)
-	;;
+        ;;
 
     *)
-	echo "$0 called with unknown argument \`$1'" 1>&2
-	exit 1
-	;;
+        echo "$0 called with unknown argument \`$1'" 1>&2
+        exit 1
+        ;;
 esac
 
 exit 0
