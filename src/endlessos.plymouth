@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=EndlessOS Plymouth Theme
+Description=EndlessOS Plymouth Theme
+ModuleName=script
+
+[script]
+ImageDir=/lib/plymouth/themes/endlessos
+ScriptFile=/lib/plymouth/themes/endlessos/endlessos.script
