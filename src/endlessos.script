@@ -1,6 +1,24 @@
+fun Round(number) {
+    return Math.Int(number);
+}
+
+image_scale_factor = 0.34;
+
+forward_z_plane = 100;
+back_z_plane = -100;
+message_z_plane = 2;
+
+message_display_offset = 0.93;
+font_height = 12;
+
 animation.imagecount = 32;
-animation.target_width = 0.333 * Window.GetHeight();
-animation.target_height = 0.333 * Window.GetHeight();
+animation.target_width = image_scale_factor * Window.GetHeight();
+animation.target_height = animation.target_width;
+
+animation.target_width = Round(animation.target_width);
+animation.target_height = Round(animation.target_height);
+animation.target_x = Round(Window.GetX() + (Window.GetWidth() - animation.target_width) / 2);
+animation.target_y = Round(Window.GetY() + (Window.GetHeight()  - animation.target_height)  / 2);
 
 fun RotatedHighlight(progress) {
     img = highlight.sprite.Rotate(Math.Pi*2*progress);
@@ -10,8 +28,13 @@ fun RotatedHighlight(progress) {
 fun LoadAndCenter(image_object) {
     image_object.sprite = SpriteNew();
     image_object.sprite.SetImage(image_object.image);
-    image_object.sprite.SetX(Window.GetX() + Window.GetWidth() / 2 - image_object.image.GetWidth() / 2);
-    image_object.sprite.SetY(Window.GetY() + Window.GetHeight() / 2 - image_object.image.GetHeight() / 2);
+
+    x = Round(Window.GetX() + (Window.GetWidth() - image_object.image.GetWidth()) / 2);
+    y = Round(Window.GetY() + (Window.GetHeight() - image_object.image.GetHeight()) / 2);
+
+    image_object.sprite.SetX(x);
+    image_object.sprite.SetY(y);
+
     image_object.sprite.SetOpacity(0);
 }
 
@@ -23,10 +46,10 @@ logo.original_image = ImageNew("logo.png");
 loaded_logo.original_image = ImageNew("logo_loaded.png");
 
 # Some predefined and reused values
-logo_scale_amount = 0.25;
-logo_ratio = logo.original_image.GetHeight() / logo.original_image.GetWidth();
-logo_scale.y = logo_scale_amount * Window.GetHeight();
-logo_scale.x = logo_scale_amount / logo_ratio *  Window.GetHeight();
+logo_aspect_ratio = logo.original_image.GetWidth() / logo.original_image.GetHeight();
+
+logo_scale.y = Round(image_scale_factor * Window.GetHeight());
+logo_scale.x = Round(logo_scale.y * logo_aspect_ratio);
 
 logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
 loaded_logo.image = loaded_logo.original_image.Scale(logo_scale.x, logo_scale.y);
@@ -55,16 +78,16 @@ if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
 
     channel_holder.sprite = SpriteNew();
     channel_holder.sprite.SetImage(ChannelImageCache[0].image);
-    channel_holder.sprite.SetX((Window.GetX() + Window.GetWidth() - animation.target_width) / 2);
-    channel_holder.sprite.SetY((Window.GetY() + Window.GetHeight()  - animation.target_height)  / 2);
+    channel_holder.sprite.SetX(animation.target_x);
+    channel_holder.sprite.SetY(animation.target_y);
     channel_holder.sprite.SetOpacity(1);
 
     highlight.original_image= ImageNew("circle_highlight.png");
     highlight.image = highlight.original_image.Scale(animation.target_width, animation.target_height);
     highlight_holder.sprite = SpriteNew();
     highlight_holder.sprite.SetImage(highlight.image);
-    highlight_holder.sprite.SetX((Window.GetX() + Window.GetWidth() - animation.target_width) / 2);
-    highlight_holder.sprite.SetY((Window.GetY() + Window.GetHeight()  - animation.target_height)  / 2);
+    highlight_holder.sprite.SetX(animation.target_x);
+    highlight_holder.sprite.SetY(animation.target_y);
     highlight_holder.sprite.SetOpacity(1);
 
     logo.sprite.SetOpacity(1);
@@ -75,7 +98,7 @@ if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
 background.image = background.original_image.Scale(Window.GetWidth() , Window.GetHeight());
 background.sprite = SpriteNew();
 background.sprite.SetImage(background.image);
-background.sprite.SetPosition(Window.GetX(), Window.GetY(), -10);
+background.sprite.SetPosition(Window.GetX(), Window.GetY(), back_z_plane);
 
 sprite_prompt = SpriteNew();
 rot = 0;
@@ -111,27 +134,28 @@ fun dialog_setup() {
 
     box.sprite = SpriteNew();
     box.sprite.SetImage(box.image);
-    box.x = Window.GetX() + Window.GetWidth()  / 2 - box.image.GetWidth() / 2;
-    box.y = Window.GetY() + Window.GetHeight() / 2 - box.image.GetHeight() / 2;
-    box.z = 10000;
+    box.x = Round(Window.GetX() + (Window.GetWidth()  - box.image.GetWidth()) / 2);
+    box.y = Round(Window.GetY() + (Window.GetHeight() - box.image.GetHeight()) / 2);
+    box.z = forward_z_plane;
     box.sprite.SetPosition(box.x, box.y, box.z);
 
     lock.sprite = SpriteNew();
     lock.sprite.SetImage(lock.image);
-    lock.x = box.x + box.image.GetWidth() / 2 - (lock.image.GetWidth() + entry.image.GetWidth()) / 2;
-    lock.y = box.y + box.image.GetHeight() / 2 - lock.image.GetHeight() / 2;
+    lock.x = Round(box.x + box.image.GetWidth() / 2 - (lock.image.GetWidth() + entry.image.GetWidth()) / 2);
+    lock.y = Round(box.y + (box.image.GetHeight() - lock.image.GetHeight()) / 2);
     lock.z = box.z + 1;
     lock.sprite.SetPosition(lock.x, lock.y, lock.z);
 
     entry.sprite = SpriteNew();
     entry.sprite.SetImage(entry.image);
     entry.x = lock.x + lock.image.GetWidth();
-    entry.y = box.y + box.image.GetHeight() / 2 - entry.image.GetHeight() / 2;
+    entry.y = Round(box.y + (box.image.GetHeight() - entry.image.GetHeight()) / 2);
     entry.z = box.z + 1;
     entry.sprite.SetPosition(entry.x, entry.y, entry.z);
 
     prompt_sprite = SpriteNew();
-    prompt_sprite.SetPosition(box.x, box.y - 20, box.z);
+    prompt_offset = 2 * font_height;
+    prompt_sprite.SetPosition(box.x, box.y - prompt_offset, box.z);
 
     global.dialog.box = box;
     global.dialog.lock = lock;
@@ -151,14 +175,14 @@ fun dialog_opacity(opacity) {
     }
 }
 
-fun display_normal_callback () {
+fun display_normal_callback() {
     global.status = "normal";
     if (global.dialog) {
         dialog_opacity(0);
     }
 }
 
-fun display_password_callback (prompt, bullets) {
+fun display_password_callback(prompt, bullets) {
     global.status = "password";
     if (!global.dialog) {
         dialog_setup();
@@ -167,7 +191,7 @@ fun display_password_callback (prompt, bullets) {
     }
 
     if (prompt) {
-        dialog.prompt_sprite.SetImage(Image.Text(prompt, 1.0, 1.0, 1.0));
+        dialog.prompt_sprite.SetImage(Image.Text(prompt, 1.0, 1.0, 1.0, 1.0, "Sans " + font_height));
     }
 
     for (index = 0; dialog.bullet[index] || index < bullets; index++) { 
@@ -175,7 +199,7 @@ fun display_password_callback (prompt, bullets) {
             dialog.bullet[index].sprite = SpriteNew();
             dialog.bullet[index].sprite.SetImage(dialog.bullet_image);
             dialog.bullet[index].x = dialog.entry.x + index * dialog.bullet_image.GetWidth() + dialog.bullet_image.GetWidth();
-            dialog.bullet[index].y = dialog.entry.y + dialog.entry.image.GetHeight() / 2 - dialog.bullet_image.GetHeight() / 2;
+            dialog.bullet[index].y = Round(dialog.entry.y + (dialog.entry.image.GetHeight() - dialog.bullet_image.GetHeight()) / 2);
             dialog.bullet[index].z = dialog.entry.z + 1;
             dialog.bullet[index].sprite.SetPosition(dialog.bullet[index].x, dialog.bullet[index].y, dialog.bullet[index].z);
         }
@@ -188,10 +212,13 @@ fun display_password_callback (prompt, bullets) {
     }
 }
 
-fun display_message_callback (prompt) {
-    prompt = Image.Text(prompt,1.0, 1.0, 1.0);
+fun display_message_callback(prompt) {
+    prompt = Image.Text(prompt, 1.0, 1.0, 1.0);
     sprite_prompt.SetImage(prompt);
-    sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
+
+    sprite_prompt.x = Round(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2);
+    sprite_prompt.y = Round(Window.GetY() + Window.GetHeight() * message_display_offset);
+    sprite_prompt.SetPosition(sprite_prompt.x, sprite_prompt.y, message_z_plane);
 }
 
 /* instantiate dialog at startup, to ensure all icons are loaded in memory before initrd is unmounted, in case /usr isn't mounted yet */
@@ -237,7 +264,7 @@ glow_ramp_end = glow_ramp_down + glow_ramp_length;
 # We show the loaded logo from glow_ramp_down onward
 loaded_logo_visible = glow_ramp_down;
 
-anim_step=(1.0 / loading_end) * animation.imagecount;
+anim_step = (1.0 / loading_end) * animation.imagecount;
 fun progress_callback (duration, raw_progress) {
     adj_progress = raw_progress * (1 / animation.length);
 
