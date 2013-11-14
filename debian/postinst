@@ -5,16 +5,6 @@ case "$1" in
         update-alternatives \
             --install /lib/plymouth/themes/default.plymouth default.plymouth \
             /lib/plymouth/themes/endlessos/endlessos.plymouth 999
-
-        if which update-initramfs >/dev/null 2>&1
-        then
-            update-initramfs -u
-        fi
-
-        if which update-grub >/dev/null 2>&1
-        then
-            update-grub
-        fi
         ;;
 
     abort-upgrade|abort-deconfigure|abort-remove)
