@@ -1,7 +1,0 @@
-#!/bin/bash -e
-
-if [ "x$1" = xremove ]; then
-    update-alternatives \
-        --remove default.plymouth /lib/plymouth/themes/endlessos/endlessos.plymouth
-fi
-
