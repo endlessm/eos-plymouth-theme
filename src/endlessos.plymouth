@@ -4,5 +4,5 @@ Description=EndlessOS Plymouth Theme
 ModuleName=script
 
 [script]
-ImageDir=/lib/plymouth/themes/endlessos
-ScriptFile=/lib/plymouth/themes/endlessos/endlessos.script
+ImageDir=/usr/share/plymouth/themes/endlessos
+ScriptFile=/usr/share/plymouth/themes/endlessos/endlessos.script
