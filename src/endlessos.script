@@ -1,12 +1,28 @@
-# Set gray background to both top and bottom of window
 bg_level = 0.3; # debug
 # bg_level = 0.87;
+
+# Set gray background to both top and bottom of window
 Window.SetBackgroundTopColor(bg_level, bg_level, bg_level);
 Window.SetBackgroundBottomColor(bg_level, bg_level, bg_level);
+
+
+# Pixel position rounding since plymouth can't handle subsampling well
+fun Round(number) {
+    return Math.Int(number);
+}
+
+# Predefine some values
+image_scale_factor = 0.42;
+logo_scale_factor = 0.085;
 
 forward_z_plane = 100;
 back_z_plane = -100;
 message_z_plane = 2;
+
+message_display_offset = 0.93;
+font_height = 12;
+
+logo.original_image = ImageNew("logo.png");
 
 background.original_image = ImageNew("background.png");
 background.image = background.original_image.Scale(Window.GetWidth(), Window.GetHeight());
@@ -14,18 +30,6 @@ background.sprite = SpriteNew();
 background.sprite.SetImage(background.image);
 background.sprite.SetPosition(Window.GetX(), Window.GetY(), back_z_plane);
 
-# Pixel position rounding since plymouth can't handle subsampling well
-fun Round(number) {
-    return Math.Int(number);
-}
-
-
-image_scale_factor = 0.32;
-
-message_display_offset = 0.93;
-font_height = 12;
-
-animation.imagecount = 32;
 animation.target_width = image_scale_factor * Window.GetHeight();
 animation.target_height = animation.target_width;
 
@@ -34,8 +38,10 @@ animation.target_height = Round(animation.target_height);
 animation.target_x = Round(Window.GetX() + (Window.GetWidth() - animation.target_width) / 2);
 animation.target_y = Round(Window.GetY() + (Window.GetHeight()  - animation.target_height)  / 2);
 
-fun RotatedHighlight(progress) {
-    img = highlight.sprite.Rotate(Math.Pi*2*progress);
+fun RotatedSpinner(progress) {
+    # XXX - Direct return here is not possible since the object will
+    #       be freed before we get to use it in the callee
+    img = highlight.sprite.Rotate(Math.Pi * 2 * progress);
     return img;
 }
 
@@ -53,12 +59,10 @@ fun LoadAndCenter(image_object) {
 }
 
 
-logo.original_image = ImageNew("logo.png");
-
 # Some predefined and reused values
 logo_aspect_ratio = logo.original_image.GetWidth() / logo.original_image.GetHeight();
 
-logo_scale.y = Round(image_scale_factor / 2 * Window.GetHeight());
+logo_scale.y = Round(logo_scale_factor * Window.GetHeight());
 logo_scale.x = Round(logo_scale.y * logo_aspect_ratio);
 
 logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
@@ -69,7 +73,12 @@ LoadAndCenter(logo);
 if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
     full_glowing_channel.original_image = ImageNew("circle_glow_channel.png");
     full_glowing_channel.image = full_glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
-    # LoadAndCenter(full_glowing_channel);
+    LoadAndCenter(full_glowing_channel);
+
+    spinner_channel.original_image = ImageNew("circle_channel.png");
+    spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
+    LoadAndCenter(spinner_channel);
+    spinner_channel.sprite.SetOpacity(1);
 
     spinner.original_image= ImageNew("circle_spinner.png");
     spinner.image = highlight.original_image.Scale(animation.target_width, animation.target_height);
@@ -85,17 +94,6 @@ if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
 
 sprite_prompt = SpriteNew();
 rot = 0;
-fun refresh_callback() {
-    if (status != "normal") {
-        # Turn off everything if there is a password prompt
-        logo.sprite.SetOpacity(0);
-        full_glowing_channel.sprite.SetOpacity(0);
-    }
-}
-
-if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
-    Plymouth.SetRefreshFunction (refresh_callback);
-}
 
 #----------------------------------------- Dialog --------------------------------
 
@@ -217,36 +215,14 @@ fun ShowLoadedLogo() {
 #    highlight_holder.sprite.SetOpacity (0);
 }
 
-# These variables determine the length of the whole cycle
-# For debugging reduce loaded_end to a value lower than 1.0
-loading_start = 0.0;
-loaded_end = 1.0;
-animation.length = loaded_end - loading_start;
+raw_progress = 0.0;
+spinner_speed = 0.017;
+fun timed_update_callback() {
+    raw_progress = raw_progress + spinner_speed;
 
-# At 55%, loading circle is full
-loading_end = 0.55;
-
-# At 40%, we start showing the glow logo and once loading circle is full
-# it should be full opacity
-glow_ramp_start = 0.40;
-glow_ramp_full =  loading_end;
-
-glow_ramp_length = glow_ramp_full - glow_ramp_start;
-
-# At 55% we slowly hide the glow
-glow_ramp_down = 0.55;
-glow_ramp_end = glow_ramp_down + glow_ramp_length;
-
-# We show the loaded logo from glow_ramp_down onward
-loaded_logo_visible = glow_ramp_down;
-
-anim_step = (1.0 / loading_end) * animation.imagecount;
-fun progress_callback (duration, raw_progress) {
-    adj_progress = raw_progress * (1 / animation.length);
-
-# Used for debugging
-   text_progress = Math.Int(adj_progress * 100);
-   prompt = Image.Text(text_progress + "% - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
+   # Used for debugging
+   text_progress = Math.Int(raw_progress * 100);
+   prompt = Image.Text("Frame " + text_progress + " - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
    sprite_prompt.SetImage(prompt);
    sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
 
@@ -255,18 +231,9 @@ fun progress_callback (duration, raw_progress) {
         return;
     }
 
-    # Show circle progress
-    if (adj_progress <= loading_end) {
-        logo.sprite.SetOpacity(1);
-
-        spinner_location = 2 * Math.Pi * adj_progress / loading_end;
-        spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_location);
-        spinner_holder.sprite.SetImage(spinner.image);
-
-        #anim_index=Math.Int(anim_step * adj_progress);
-    } else {
-        logo.sprite.SetOpacity(1);
-    }
+    spinner_location = 2 * Math.Pi * raw_progress;
+    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_location);
+    spinner_holder.sprite.SetImage(spinner.image);
 
     # Show glow
     if (adj_progress >= glow_ramp_start) {
@@ -284,13 +251,24 @@ fun progress_callback (duration, raw_progress) {
             #full_glowing_channel.sprite.SetOpacity(glow_opacity);
         }
     }
+}
 
-    # Show loaded logo
-    if (adj_progress >= loaded_logo_visible) {
-        loaded_logo.sprite.SetOpacity(1);
+fun refresh_callback() {
+    if (status != "normal") {
+        # Turn off everything if there is a password prompt
+        logo.sprite.SetOpacity(0);
+        spinner_channel.sprite.SetOpacity(0);
+        full_glowing_channel.sprite.SetOpacity(0);
+    } else {
+        timed_update_callback();
     }
 }
-Plymouth.SetBootProgressFunction(progress_callback);
+
+if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
+    Plymouth.SetRefreshFunction (refresh_callback);
+}
+
+# Plymouth.SetBootProgressFunction(progress_callback);
 
 #----------------------------------------- Quit --------------------------------
 
