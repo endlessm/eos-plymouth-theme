@@ -66,29 +66,31 @@ logo_scale.y = Round(logo_scale_factor * Window.GetHeight());
 logo_scale.x = Round(logo_scale.y * logo_aspect_ratio);
 
 logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
-
 LoadAndCenter(logo);
 
 # If we are loading normal boot/shutdown
 if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
-    full_glowing_channel.original_image = ImageNew("circle_glow_channel.png");
-    full_glowing_channel.image = full_glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
-    LoadAndCenter(full_glowing_channel);
+    glowing_channel.original_image = ImageNew("circle_glow_channel.png");
+    glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
+    LoadAndCenter(glowing_channel);
+
 
     spinner_channel.original_image = ImageNew("circle_channel.png");
     spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
     LoadAndCenter(spinner_channel);
     spinner_channel.sprite.SetOpacity(1);
 
-    spinner.original_image= ImageNew("circle_spinner.png");
-    spinner.image = highlight.original_image.Scale(animation.target_width, animation.target_height);
-    spinner_holder.sprite = SpriteNew();
-    spinner_holder.sprite.SetImage(spinner.image);
-    spinner_holder.sprite.SetX(animation.target_x);
-    spinner_holder.sprite.SetY(animation.target_y);
+    glowing_spinner.original_image = ImageNew("circle_glow_spinner.png");
+    glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
+    LoadAndCenter(glowing_spinner);
+    # glowing_spinner.sprite.SetOpacity(1);
+
+    spinner.original_image = ImageNew("circle_spinner.png");
+    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
+    LoadAndCenter(spinner);
+    spinner.sprite.SetOpacity(1);
 
     logo.sprite.SetOpacity(1);
-    spinner_holder.sprite.SetOpacity(1);
 } else {
 }
 
@@ -211,8 +213,7 @@ Plymouth.SetUpdateStatusFunction(display_message_callback);
 #----------------------------------------- Animation --------------------------------
 fun ShowLoadedLogo() {
     logo.sprite.SetOpacity(1);
-    channel_holder.sprite.SetOpacity(0);
-#    highlight_holder.sprite.SetOpacity (0);
+    spinner_channel.sprite.SetOpacity(0);
 }
 
 raw_progress = 0.0;
@@ -231,9 +232,12 @@ fun timed_update_callback() {
         return;
     }
 
-    spinner_location = 2 * Math.Pi * raw_progress;
-    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_location);
-    spinner_holder.sprite.SetImage(spinner.image);
+    spinner_rotation = 2 * Math.Pi * raw_progress;
+    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    spinner.sprite.SetImage(spinner.image);
+
+    glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    glowing_spinner.sprite.SetImage(glowing_spinner.image);
 
     # Show glow
     if (adj_progress >= glow_ramp_start) {
@@ -242,13 +246,13 @@ fun timed_update_callback() {
             #glow_opacity = (adj_progress - glow_ramp_start) * (1.0 / glow_ramp_length);
             #glow_opacity = Math.Min(1.0, glow_opacity);
             #glowing_logo.sprite.SetOpacity(glow_opacity);
-            #full_glowing_channel.sprite.SetOpacity(glow_opacity);
+            #glowing_channel.sprite.SetOpacity(glow_opacity);
         # Ramp down
         } else if (adj_progress < glow_ramp_end) {
             #glow_opacity = (adj_progress - glow_ramp_down) * (1.0 / glow_ramp_length);
             #glow_opacity = 1 - glow_opacity;
             #glowing_logo.sprite.SetOpacity(glow_opacity);
-            #full_glowing_channel.sprite.SetOpacity(glow_opacity);
+            #glowing_channel.sprite.SetOpacity(glow_opacity);
         }
     }
 }
@@ -258,7 +262,7 @@ fun refresh_callback() {
         # Turn off everything if there is a password prompt
         logo.sprite.SetOpacity(0);
         spinner_channel.sprite.SetOpacity(0);
-        full_glowing_channel.sprite.SetOpacity(0);
+        glowing_channel.sprite.SetOpacity(0);
     } else {
         timed_update_callback();
     }
