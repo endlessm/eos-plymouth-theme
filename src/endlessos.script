@@ -1,10 +1,11 @@
-bg_level = 0.3; # debug
-# bg_level = 0.87;
+# EOS Plymouth Theme
+#
+# Last modified: Feb 5, 2014 - Srdjan Grubor <sgnn7@sgnn7.org>
 
 # Set gray background to both top and bottom of window
+bg_level = 0.87;
 Window.SetBackgroundTopColor(bg_level, bg_level, bg_level);
 Window.SetBackgroundBottomColor(bg_level, bg_level, bg_level);
-
 
 # Pixel position rounding since plymouth can't handle subsampling well
 fun Round(number) {
@@ -20,7 +21,10 @@ back_z_plane = -100;
 message_z_plane = 2;
 
 message_display_offset = 0.93;
+debug_message_display_offset = 0.83;
 font_height = 12;
+
+spinner_speed = 0.017;
 
 # Load the background
 background.original_image = ImageNew("background.png");
@@ -30,6 +34,7 @@ background.sprite.SetImage(background.image);
 background.sprite.SetPosition(Window.GetX(), Window.GetY(), back_z_plane);
 
 # Figure out the scaling of the centered assets
+# XXX - All dynamic scaling removed until we get new assets
 animation.target_width = image_scale_factor * Window.GetHeight();
 animation.target_height = animation.target_width;
 
@@ -60,31 +65,44 @@ logo_aspect_ratio = logo.original_image.GetWidth() / logo.original_image.GetHeig
 logo_scale.y = Round(logo_scale_factor * Window.GetHeight());
 logo_scale.x = Round(logo_scale.y * logo_aspect_ratio);
 
+# XXX - All dynamic scaling removed until we get new assets
+# logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
+logo.image = logo.original_image;
+
 # Load the logo since that will always be present
-logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
 LoadAndCenter(logo);
 logo.sprite.SetOpacity(1);
 
+# Fix the awkward offset in the logo asset by moving it down
+logo.sprite.SetY(logo.sprite.GetY() + 4);
+
 # Load the other assets
+# XXX - All dynamic scaling removed until we get new assets
+
 glowing_channel.original_image = ImageNew("circle_glow_channel.png");
-glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
+# glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
+glowing_channel.image = glowing_channel.original_image;
 LoadAndCenter(glowing_channel);
 
 spinner_channel.original_image = ImageNew("circle_channel.png");
-spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
+# spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
+spinner_channel.image = spinner_channel.original_image;
 LoadAndCenter(spinner_channel);
 
 glowing_spinner.original_image = ImageNew("circle_glow_spinner.png");
-glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
+# glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
+glowing_spinner.image = glowing_spinner.original_image;
 LoadAndCenter(glowing_spinner);
 
 spinner.original_image = ImageNew("circle_spinner.png");
-spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
+# spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
+spinner.image = spinner.original_image;
 LoadAndCenter(spinner);
 
 # If we are loading normal boot or resuming
 if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
     spinner_channel.sprite.SetOpacity(1);
+    glowing_channel.sprite.SetOpacity(1);
     spinner.sprite.SetOpacity(1);
 }
 
@@ -190,91 +208,154 @@ fun display_message_callback(prompt) {
     sprite_prompt.SetPosition(sprite_prompt.x, sprite_prompt.y, message_z_plane);
 }
 
+debug_sprite_prompt = SpriteNew();
+fun display_debug_message(message) {
+    debug_message = Image.Text(message, 1.0, 1.0, 1.0);
+    debug_sprite_prompt.SetImage(debug_message);
+
+    debug_sprite_prompt.x = Round(Window.GetX() + (Window.GetWidth() - debug_message.GetWidth()) / 2);
+    debug_sprite_prompt.y = Round(Window.GetY() + Window.GetHeight() * debug_message_display_offset);
+    debug_sprite_prompt.SetPosition(debug_sprite_prompt.x, debug_sprite_prompt.y, message_z_plane);
+}
+
+fun display_question_callback(prompt, entry) {
+    # Calculate length of string
+    length = 0;
+    while(entry.CharAt(length)) length++;
+
+    display_password_callback(prompt, length);
+}
+
 # Instantiate dialog at startup to ensure all icons are loaded in memory before initrd is unmounted
 # in case /usr isn't mounted yet
 dialog_setup();
 dialog_opacity(0);
 
+# Register handlers for password/message callbacks
 Plymouth.SetDisplayNormalFunction(display_normal_callback);
 Plymouth.SetDisplayPasswordFunction(display_password_callback);
 Plymouth.SetMessageFunction(display_message_callback);
+Plymouth.SetDisplayQuestionFunction(display_question_callback);
 
-# This shows what is starting which is too noisy now. Maybe we can add ability
-# to show fsck status in the future
+# We need to do fsck only
 Plymouth.SetUpdateStatusFunction(display_message_callback);
 
-#----------------------------------------- Animation --------------------------------
-fun ShowEndPhase() {
-    logo.sprite.SetOpacity(1);
-    spinner.sprite.SetOpacity(0);
-    glowing_spinner.sprite.SetOpacity(0);
-    spinner_channel.sprite.SetOpacity(0);
-    glowing_channel.sprite.SetOpacity(0);
-}
-
-raw_progress = 0.0;
-spinner_speed = 0.017;
+# Spinning animation
+spinner_progress = 0.0;
 fun timed_update_callback() {
-    raw_progress = raw_progress + spinner_speed;
+    spinner_progress = (spinner_progress + spinner_speed) % 360;
 
-   # Used for debugging
-   #text_progress = Math.Int(raw_progress * 100);
-   #prompt = Image.Text("Frame " + text_progress + " - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
-   #sprite_prompt.SetImage(prompt);
-   #sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
+    # Debug info
+    # text_progress = Math.Int(spinner_progress * 100);
+    # display_debug_message(text_progress);
 
-    if (Plymouth.GetMode() == "shutdown") {
-        ShowEndPhase();
-        return;
-    }
-
-    spinner_rotation = 2 * Math.Pi * raw_progress;
-    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    spinner_rotation = 2 * Math.Pi * spinner_progress;
+    # spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    spinner.image = spinner.original_image.Rotate(spinner_rotation);
     spinner.sprite.SetImage(spinner.image);
 
-    glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    # glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height).Rotate(spinner_rotation);
+    glowing_spinner.image = glowing_spinner.original_image.Rotate(spinner_rotation);
     glowing_spinner.sprite.SetImage(glowing_spinner.image);
-
-    # Show glow
-    if (adj_progress >= glow_ramp_start) {
-        # Ramp up and hold
-        if (adj_progress < glow_ramp_down) {
-            #glow_opacity = (adj_progress - glow_ramp_start) * (1.0 / glow_ramp_length);
-            #glow_opacity = Math.Min(1.0, glow_opacity);
-            #glowing_logo.sprite.SetOpacity(glow_opacity);
-            #glowing_channel.sprite.SetOpacity(glow_opacity);
-        # Ramp down
-        } else if (adj_progress < glow_ramp_end) {
-            #glow_opacity = (adj_progress - glow_ramp_down) * (1.0 / glow_ramp_length);
-            #glow_opacity = 1 - glow_opacity;
-            #glowing_logo.sprite.SetOpacity(glow_opacity);
-            #glowing_channel.sprite.SetOpacity(glow_opacity);
-        }
-    }
 }
 
+# On refresh
 fun refresh_callback() {
+    # Turn off everything if there is a password prompt
     if (status != "normal") {
-        # Turn off everything if there is a password prompt
         logo.sprite.SetOpacity(0);
         spinner.sprite.SetOpacity(0);
         glowing_spinner.sprite.SetOpacity(0);
         spinner_channel.sprite.SetOpacity(0);
         glowing_channel.sprite.SetOpacity(0);
+    # Otherwise if we're shutting down, show shutdown screen
+    } else if (Plymouth.GetMode() == "shutdown") {
+        dialog_opacity(0);
+        logo.sprite.SetOpacity(1);
+        spinner.sprite.SetOpacity(0);
+        glowing_spinner.sprite.SetOpacity(0);
+        spinner_channel.sprite.SetOpacity(0);
+        glowing_channel.sprite.SetOpacity(0);
+        return;
+    # All else, update the animation for boot
     } else {
         timed_update_callback();
     }
 }
+Plymouth.SetRefreshFunction (refresh_callback);
 
-if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
-    Plymouth.SetRefreshFunction (refresh_callback);
+# On boot progress change variables
+
+# At 55%, loading circle is fully glowing
+keyframe_loading_end = 0.55;
+
+# At 40%, we start showing the glow logo and once loading circle is full
+# it should be full opacity
+keyframe_glow_ramp_start = 0.40;
+keyframe_glow_ramp_full = keyframe_loading_end;
+keyframe_glow_ramp_length = keyframe_glow_ramp_full - keyframe_glow_ramp_start;
+
+# At 55% we slowly hide the glow
+keyframe_glow_ramp_down = keyframe_loading_end;
+keyframe_glow_ramp_end = keyframe_glow_ramp_down + keyframe_glow_ramp_length;
+
+# At the end of hiding the glow, we slowly hide the logo
+keyframe_logo_ramp_length = 0.08;
+keyframe_logo_ramp_end = keyframe_glow_ramp_end + keyframe_logo_ramp_length;
+
+# Boot progress callback
+fun progress_callback(duration, progress) {
+    if (Plymouth.GetMode() == "boot" && status == "normal") {
+       # Debug info
+       # text_progress = Math.Int(progress * 100);
+       # display_debug_message(text_progress);
+
+        # Show glow
+        if (progress >= keyframe_glow_ramp_start) {
+            # Ramp up and hold
+            if (progress < keyframe_glow_ramp_down) {
+                glow_opacity = (progress - keyframe_glow_ramp_start) * (1.0 / keyframe_glow_ramp_length);
+                glow_opacity = Math.Min(1.0, glow_opacity);
+
+                glowing_spinner.sprite.SetOpacity(glow_opacity);
+                glowing_channel.sprite.SetOpacity(glow_opacity);
+
+            # Ramp down
+            } else if (progress < keyframe_glow_ramp_end) {
+                glow_opacity = (progress - keyframe_glow_ramp_down) * (1.0 / keyframe_glow_ramp_length);
+                glow_opacity = 1 - glow_opacity;
+
+                spinner.sprite.SetOpacity(glow_opacity);
+                spinner_channel.sprite.SetOpacity(glow_opacity);
+                glowing_spinner.sprite.SetOpacity(glow_opacity);
+                glowing_channel.sprite.SetOpacity(glow_opacity);
+
+            # Ramp down logo
+            } else if (progress < keyframe_logo_ramp_end) {
+                glow_opacity = (progress - keyframe_glow_ramp_end) * (1.0 / keyframe_logo_ramp_length);
+                glow_opacity = 1 - glow_opacity;
+                logo.sprite.SetOpacity(glow_opacity);
+
+            # If we are past the animation end, ensure that all sprites are hidden
+            } else if (progress >= keyframe_logo_ramp_end) {
+                logo.sprite.SetOpacity(0);
+                spinner.sprite.SetOpacity(0);
+                spinner_channel.sprite.SetOpacity(0);
+                glowing_spinner.sprite.SetOpacity(0);
+                glowing_channel.sprite.SetOpacity(0);
+            }
+        }
+    }
 }
+Plymouth.SetBootProgressFunction(progress_callback);
 
-# Plymouth.SetBootProgressFunction(progress_callback);
-
-#----------------------------------------- Quit --------------------------------
-
+# Escape handler
 fun quit_callback() {
-    ShowEndPhase();
+    dialog_opacity(0);
+    logo.sprite.SetOpacity(1);
+    spinner.sprite.SetOpacity(0);
+    glowing_spinner.sprite.SetOpacity(0);
+    spinner_channel.sprite.SetOpacity(0);
+    glowing_channel.sprite.SetOpacity(0);
 }
 Plymouth.SetQuitFunction(quit_callback);
