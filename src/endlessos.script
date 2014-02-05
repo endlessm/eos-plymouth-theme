@@ -238,7 +238,7 @@ Plymouth.SetMessageFunction(display_message_callback);
 Plymouth.SetDisplayQuestionFunction(display_question_callback);
 
 # We need to do fsck only
-Plymouth.SetUpdateStatusFunction(display_message_callback);
+# Plymouth.SetUpdateStatusFunction(display_message_callback);
 
 # Spinning animation
 spinner_progress = 0.0;
