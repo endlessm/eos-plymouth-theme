@@ -65,28 +65,30 @@ logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
 LoadAndCenter(logo);
 logo.sprite.SetOpacity(1);
 
+# Load the other assets
+glowing_channel.original_image = ImageNew("circle_glow_channel.png");
+glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
+LoadAndCenter(glowing_channel);
+
+spinner_channel.original_image = ImageNew("circle_channel.png");
+spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
+LoadAndCenter(spinner_channel);
+
+glowing_spinner.original_image = ImageNew("circle_glow_spinner.png");
+glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
+LoadAndCenter(glowing_spinner);
+
+spinner.original_image = ImageNew("circle_spinner.png");
+spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
+LoadAndCenter(spinner);
+
 # If we are loading normal boot or resuming
 if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
-    glowing_channel.original_image = ImageNew("circle_glow_channel.png");
-    glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
-    LoadAndCenter(glowing_channel);
-
-    spinner_channel.original_image = ImageNew("circle_channel.png");
-    spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
-    LoadAndCenter(spinner_channel);
     spinner_channel.sprite.SetOpacity(1);
-
-    glowing_spinner.original_image = ImageNew("circle_glow_spinner.png");
-    glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
-    LoadAndCenter(glowing_spinner);
-
-    spinner.original_image = ImageNew("circle_spinner.png");
-    spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
-    LoadAndCenter(spinner);
     spinner.sprite.SetOpacity(1);
 }
 
-#----------------------------------------- Dialog --------------------------------
+# Dialog logic
 status = "normal";
 fun dialog_setup() {
     local.box;
@@ -188,20 +190,26 @@ fun display_message_callback(prompt) {
     sprite_prompt.SetPosition(sprite_prompt.x, sprite_prompt.y, message_z_plane);
 }
 
-/* instantiate dialog at startup, to ensure all icons are loaded in memory before initrd is unmounted, in case /usr isn't mounted yet */
-dialog_setup(); dialog_opacity(0);
+# Instantiate dialog at startup to ensure all icons are loaded in memory before initrd is unmounted
+# in case /usr isn't mounted yet
+dialog_setup();
+dialog_opacity(0);
 
 Plymouth.SetDisplayNormalFunction(display_normal_callback);
 Plymouth.SetDisplayPasswordFunction(display_password_callback);
 Plymouth.SetMessageFunction(display_message_callback);
+
 # This shows what is starting which is too noisy now. Maybe we can add ability
 # to show fsck status in the future
 Plymouth.SetUpdateStatusFunction(display_message_callback);
 
 #----------------------------------------- Animation --------------------------------
-fun ShowLoadedLogo() {
+fun ShowEndPhase() {
     logo.sprite.SetOpacity(1);
+    spinner.sprite.SetOpacity(0);
+    glowing_spinner.sprite.SetOpacity(0);
     spinner_channel.sprite.SetOpacity(0);
+    glowing_channel.sprite.SetOpacity(0);
 }
 
 raw_progress = 0.0;
@@ -210,13 +218,13 @@ fun timed_update_callback() {
     raw_progress = raw_progress + spinner_speed;
 
    # Used for debugging
-   text_progress = Math.Int(raw_progress * 100);
-   prompt = Image.Text("Frame " + text_progress + " - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
-   sprite_prompt.SetImage(prompt);
-   sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
+   #text_progress = Math.Int(raw_progress * 100);
+   #prompt = Image.Text("Frame " + text_progress + " - " + Plymouth.GetMode(), 1.0, 1.0, 1.0);
+   #sprite_prompt.SetImage(prompt);
+   #sprite_prompt.SetPosition(Window.GetX() + (Window.GetWidth() - prompt.GetWidth()) / 2, Window.GetY() + Window.GetHeight() * 0.93, 2);
 
     if (Plymouth.GetMode() == "shutdown") {
-        ShowLoadedLogo();
+        ShowEndPhase();
         return;
     }
 
@@ -249,6 +257,8 @@ fun refresh_callback() {
     if (status != "normal") {
         # Turn off everything if there is a password prompt
         logo.sprite.SetOpacity(0);
+        spinner.sprite.SetOpacity(0);
+        glowing_spinner.sprite.SetOpacity(0);
         spinner_channel.sprite.SetOpacity(0);
         glowing_channel.sprite.SetOpacity(0);
     } else {
@@ -265,6 +275,6 @@ if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
 #----------------------------------------- Quit --------------------------------
 
 fun quit_callback() {
-    ShowLoadedLogo();
+    ShowEndPhase();
 }
 Plymouth.SetQuitFunction(quit_callback);
