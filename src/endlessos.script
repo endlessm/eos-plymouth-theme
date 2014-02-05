@@ -22,14 +22,14 @@ message_z_plane = 2;
 message_display_offset = 0.93;
 font_height = 12;
 
-logo.original_image = ImageNew("logo.png");
-
+# Load the background
 background.original_image = ImageNew("background.png");
 background.image = background.original_image.Scale(Window.GetWidth(), Window.GetHeight());
 background.sprite = SpriteNew();
 background.sprite.SetImage(background.image);
 background.sprite.SetPosition(Window.GetX(), Window.GetY(), back_z_plane);
 
+# Figure out the scaling of the centered assets
 animation.target_width = image_scale_factor * Window.GetHeight();
 animation.target_height = animation.target_width;
 
@@ -37,13 +37,6 @@ animation.target_width = Round(animation.target_width);
 animation.target_height = Round(animation.target_height);
 animation.target_x = Round(Window.GetX() + (Window.GetWidth() - animation.target_width) / 2);
 animation.target_y = Round(Window.GetY() + (Window.GetHeight()  - animation.target_height)  / 2);
-
-fun RotatedSpinner(progress) {
-    # XXX - Direct return here is not possible since the object will
-    #       be freed before we get to use it in the callee
-    img = highlight.sprite.Rotate(Math.Pi * 2 * progress);
-    return img;
-}
 
 fun LoadAndCenter(image_object) {
     image_object.sprite = SpriteNew();
@@ -58,22 +51,25 @@ fun LoadAndCenter(image_object) {
     image_object.sprite.SetOpacity(0);
 }
 
+logo.original_image = ImageNew("logo.png");
 
 # Some predefined and reused values
 logo_aspect_ratio = logo.original_image.GetWidth() / logo.original_image.GetHeight();
 
+# Logo has its own scaling
 logo_scale.y = Round(logo_scale_factor * Window.GetHeight());
 logo_scale.x = Round(logo_scale.y * logo_aspect_ratio);
 
+# Load the logo since that will always be present
 logo.image = logo.original_image.Scale(logo_scale.x, logo_scale.y);
 LoadAndCenter(logo);
+logo.sprite.SetOpacity(1);
 
-# If we are loading normal boot/shutdown
+# If we are loading normal boot or resuming
 if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
     glowing_channel.original_image = ImageNew("circle_glow_channel.png");
     glowing_channel.image = glowing_channel.original_image.Scale(animation.target_width, animation.target_height);
     LoadAndCenter(glowing_channel);
-
 
     spinner_channel.original_image = ImageNew("circle_channel.png");
     spinner_channel.image = spinner_channel.original_image.Scale(animation.target_width, animation.target_height);
@@ -83,24 +79,15 @@ if (Plymouth.GetMode() != "suspend" && Plymouth.GetMode() != "resume") {
     glowing_spinner.original_image = ImageNew("circle_glow_spinner.png");
     glowing_spinner.image = glowing_spinner.original_image.Scale(animation.target_width, animation.target_height);
     LoadAndCenter(glowing_spinner);
-    # glowing_spinner.sprite.SetOpacity(1);
 
     spinner.original_image = ImageNew("circle_spinner.png");
     spinner.image = spinner.original_image.Scale(animation.target_width, animation.target_height);
     LoadAndCenter(spinner);
     spinner.sprite.SetOpacity(1);
-
-    logo.sprite.SetOpacity(1);
-} else {
 }
 
-sprite_prompt = SpriteNew();
-rot = 0;
-
 #----------------------------------------- Dialog --------------------------------
-
 status = "normal";
-
 fun dialog_setup() {
     local.box;
     local.lock;
@@ -191,6 +178,7 @@ fun display_password_callback(prompt, bullets) {
     }
 }
 
+sprite_prompt = SpriteNew();
 fun display_message_callback(prompt) {
     prompt = Image.Text(prompt, 1.0, 1.0, 1.0);
     sprite_prompt.SetImage(prompt);
