@@ -287,11 +287,11 @@ Plymouth.SetRefreshFunction (refresh_callback);
 # On boot progress change variables
 
 # At 55%, loading circle is fully glowing
-keyframe_loading_end = 0.55;
+keyframe_loading_end = 0.45;
 
 # At 40%, we start showing the glow logo and once loading circle is full
 # it should be full opacity
-keyframe_glow_ramp_start = 0.40;
+keyframe_glow_ramp_start = 0.30;
 keyframe_glow_ramp_full = keyframe_loading_end;
 keyframe_glow_ramp_length = keyframe_glow_ramp_full - keyframe_glow_ramp_start;
 
@@ -300,7 +300,7 @@ keyframe_glow_ramp_down = keyframe_loading_end;
 keyframe_glow_ramp_end = keyframe_glow_ramp_down + keyframe_glow_ramp_length;
 
 # At the end of hiding the glow, we slowly hide the logo
-keyframe_logo_ramp_length = 0.08;
+keyframe_logo_ramp_length = 0.18;
 keyframe_logo_ramp_end = keyframe_glow_ramp_end + keyframe_logo_ramp_length;
 
 # Boot progress callback
@@ -352,10 +352,15 @@ Plymouth.SetBootProgressFunction(progress_callback);
 # Escape handler
 fun quit_callback() {
     dialog_opacity(0);
-    logo.sprite.SetOpacity(1);
     spinner.sprite.SetOpacity(0);
     glowing_spinner.sprite.SetOpacity(0);
     spinner_channel.sprite.SetOpacity(0);
     glowing_channel.sprite.SetOpacity(0);
+
+    if (Plymouth.GetMode() == "boot") {
+        logo.sprite.SetOpacity(0);
+    } else {
+        logo.sprite.SetOpacity(1);
+    }
 }
 Plymouth.SetQuitFunction(quit_callback);
