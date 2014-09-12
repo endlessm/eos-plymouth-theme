@@ -286,7 +286,7 @@ Plymouth.SetRefreshFunction (refresh_callback);
 
 # On boot progress change variables
 
-# At 55%, loading circle is fully glowing
+# At 45%, loading circle is fully glowing
 keyframe_loading_end = 0.45;
 
 # At 40%, we start showing the glow logo and once loading circle is full
@@ -295,12 +295,12 @@ keyframe_glow_ramp_start = 0.30;
 keyframe_glow_ramp_full = keyframe_loading_end;
 keyframe_glow_ramp_length = keyframe_glow_ramp_full - keyframe_glow_ramp_start;
 
-# At 55% we slowly hide the glow
-keyframe_glow_ramp_down = keyframe_loading_end;
+# At 60% we slowly hide the glow
+keyframe_glow_ramp_down = keyframe_glow_ramp_full + keyframe_glow_ramp_length;
 keyframe_glow_ramp_end = keyframe_glow_ramp_down + keyframe_glow_ramp_length;
 
 # At the end of hiding the glow, we slowly hide the logo
-keyframe_logo_ramp_length = 0.18;
+keyframe_logo_ramp_length = 1 - keyframe_glow_ramp_end;
 keyframe_logo_ramp_end = keyframe_glow_ramp_end + keyframe_logo_ramp_length;
 
 # Boot progress callback
