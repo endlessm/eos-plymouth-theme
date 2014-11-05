@@ -4,7 +4,7 @@ Description=EndlessOS Plymouth Theme
 ModuleName=two-step
 
 [two-step]
-ImageDir=/usr/share/plymouth/themes/endlessos
+ImageDir=/usr/share/plymouth/themes/endlessos-static
 WatermarkHorizontalAlignment=.5
 WatermarkVerticalAlignment=.8
 BackgroundStartColor=0x2e3436
