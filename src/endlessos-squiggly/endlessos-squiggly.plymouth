@@ -1,0 +1,10 @@
+[Plymouth Theme]
+Name=EndlessOS Plymouth Theme
+Description=EndlessOS Plymouth Theme
+ModuleName=two-step
+
+[two-step]
+ImageDir=/usr/share/plymouth/themes/endlessos-squiggly
+BackgroundStartColor=0x2e3436
+BackgroundEndColor=0x2e3436
+ShowAnimationPercent=0
