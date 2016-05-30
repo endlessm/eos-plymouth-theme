@@ -8,9 +8,14 @@ Homepage: http://endlessm.com
 
 Package: eos-plymouth-theme
 Architecture: all
+XCBS-EOS-MinOsVersion: 1.4.7
+XCBS-EOS-AppId: com.endlessm.
+XCBS-EOS-AppName: Plymouth
 Depends: ${misc:Depends},
          plymouth (>=0.8.2),
-         plymouth-drm
+         plymouth-label (>=0.8.2),
+         plymouth-theme-script (>=0.8.2)
 Description: Endless OS theme for Plymouth
  Endless OS theme for Plymouth designed to make the boot
  experience more consistent
+
