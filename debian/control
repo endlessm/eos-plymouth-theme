@@ -19,5 +19,7 @@ Description: Endless OS theme for Plymouth
 Package: eos-plymouth-theme-logos
 Architecture: all
 Depends: ${misc:Depends}
+Breaks: eos-plymouth-theme (<<1.3.0~rc1+dev36.9650772)
+Replaces: eos-plymouth-theme (<<1.3.0~rc1+dev36.9650772)
 Description: Endless OS theme for Plymouth logos
  Logos used in the Endless OS theme for Plymouth
