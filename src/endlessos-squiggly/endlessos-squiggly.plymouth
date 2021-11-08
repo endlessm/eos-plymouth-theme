@@ -5,6 +5,6 @@ ModuleName=two-step
 
 [two-step]
 ImageDir=/usr/share/plymouth/themes/endlessos-squiggly
-BackgroundStartColor=0x12282E
-BackgroundEndColor=0x12282E
+BackgroundStartColor=0x2e3436
+BackgroundEndColor=0x2e3436
 ShowAnimationPercent=0
