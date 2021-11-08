@@ -1,0 +1,10 @@
+[Plymouth Theme]
+Name=Endless OS Spinner
+Description=A spinner in the shape of the Endless OS logo
+ModuleName=two-step
+
+[two-step]
+ImageDir=/usr/share/plymouth/themes/endlessos-spinner
+BackgroundStartColor=0x12282E
+BackgroundEndColor=0x12282E
+ShowAnimationPercent=0
