@@ -7,4 +7,11 @@ ModuleName=two-step
 ImageDir=/usr/share/plymouth/themes/endlessos-spinner
 BackgroundStartColor=0x2e3436
 BackgroundEndColor=0x2e3436
-ShowAnimationPercent=0
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.66
+
+[shutdown]
+UseAnimation=false
+
+[reboot]
+UseAnimation=false
