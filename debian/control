@@ -1,10 +1,10 @@
 Source: eos-plymouth-theme
 Section: admin
 Priority: optional
-Maintainer: Srdjan Grubor <sgnn7@sgnn7.org>
+Maintainer: Endless OS Maintainers <maintainers@endlessm.com>
 Standards-Version: 3.8.4
 Build-Depends: debhelper (>= 8.1.2)
-Homepage: http://endlessm.com
+Homepage: https://endlessos.com
 
 Package: eos-plymouth-theme
 Architecture: all
